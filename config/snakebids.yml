@@ -10,6 +10,8 @@ derivatives: False #will search in bids/derivatives if True; can also be path(s)
 analysis_levels: &analysis_levels
  - participant
 
+participant_tsv: '../resources/participants_run.tsv'
+
 
 #mapping from analysis_level to set of target rules or files
 targets_by_analysis_level:
@@ -25,7 +27,7 @@ pybids_inputs:
   bold:
     filters:
       suffix: 'bold'
-      extension: '.nii.gz'
+      extension: 'tar'
       datatype: 'func'
     wildcards:
       - subject
@@ -83,7 +85,7 @@ parse_args:
 
  # custom command-line parameters can then be added, these will get added to the config
  # below is an example to override config['bet_frac']
-  --source_dir:
+  --sourcedata_dir:
     help: 'Path to sourcedata directory i.e. tar files '
     default: '/home/greydon/Documents/data/SNSX_7T/sourcedata'
 
@@ -93,11 +95,11 @@ parse_args:
           (default: %(default)s)'
     default: '/home/greydon/Documents/data/SNSX_7T/resources/.coeff_AC84.grad'
 
-  --SNSX_participant_id:
-    help: 'Participant Name/ID according to Western CFMM DICOM Server ex. YYYY_MM_DD_SNSX_P${participant}'
-    default: False
-    nargs: '+'
-    required: True
+  # --SNSX_participant_id:
+  #   help: 'Participant Name/ID according to Western CFMM DICOM Server ex. YYYY_MM_DD_SNSX_P${participant}'
+  #   default: False
+  #   nargs: '+'
+  #   required: False
 
 #--- workflow specific configuration -- below is just an example:
 
