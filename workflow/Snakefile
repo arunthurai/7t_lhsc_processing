@@ -1,5 +1,14 @@
 #---- begin snakebids boilerplate ----------------------------------------------
 
+# THE BELOW WORKFLOW IS IN THE DEVELOPMENT STAGE
+# IT IS STILL ROUGH WORK
+# THE BELOW WORKFLOW NEEDS TO BE TESTED
+
+# TO DO:
+# verify file paths
+# verify shell scripts
+# verify correct bids formatting output
+
 import snakebids
 from snakebids import bids
 import pandas as pd
@@ -40,6 +49,9 @@ def get_server_id(wildcards):
     server_id = pd.read_table(participants_tsv).server_id
     return server_id
 
+# I was unsure where smooth came from - uncomment if part of the workflow
+# for now I replaced this with the output of prepdwi
+
 # rule all:
 #     input:
 #         expand(
@@ -57,12 +69,17 @@ rule all:
     input: 
         expand(
            bids(
-            root=output_dir,
-            suffix='prepdwi.nii.gz',
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='prepdwi',
+            suffix='.nii.gz',
             **inputs['bold'].wildcards
             ) 
         )
+    default_target: True
 
+# cfmm2tar
+# to verify and test - tar_dir
 rule cfmm2tar:
     input: 
         cfmm_id=lambda wildcards: get_server_id(wildcards)
@@ -71,30 +88,38 @@ rule cfmm2tar:
     container: config['singularity']['cfmm2tar']
     shell: 'apptainer run docker://khanlab/cfmm2tar:v1.0.0 -n {input.cfmm_id} {output.tar_dir}'
 
+# tar2bids
 rule tar2bids:
     input: 
         tar_dir=expand("{tar_dir}/{wildcards.subject}", tar_dir=config['sourcedata_dir']) 
     output: 
         bids(
-            root=output_dir,
-            suffix='prepdwi.nii.gz',
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='bids',
+            suffix='.nii.gz',
             **inputs['bold'].wildcards
         )
     container: config['singularity']['tar2bids']
-    script: cfmm_base.py
+    script: "cfmm_base.py"
     shell: 'apptainer run docker://khanlab/tar2bids:latest -h {script} -o {output} {input}
 
+# run gradcorrect
 rule run_gradcorrect:
     input:
         bids(
-            root=output_dir,
-            suffix='bids.nii.gz',
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='bids',
+            suffix='.nii.gz',
             **inputs['bold'].wildcards
         )
     output:
         bids(
-            root=output_dir,
-            suffix='gradcorrect.nii.gz',
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='gradcorrect',
+            suffix='.nii.gz',
             **inputs['bold'].wildcards
         )
     container: config['singularity']['gradcorrect']
@@ -105,17 +130,22 @@ rule run_gradcorrect:
     # verify the script down below is correct
     shell: 'apptainer run docker://khanlab/gradcorrect:latest {input} {output} participant --{params.grad_coeffs} --participant_label P${params.participant}'
 
+# prepdwi
 rule prepdwi:
     input:
         bids(
-            root=output_dir,
-            suffix='gradcorrect.nii.gz',
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='gradcorrect',
+            suffix='.nii.gz',
             **inputs['bold'].wildcards
         )
     output:
         bids(
-            root=output_dir,
-            suffix='prepdwi.nii.gz',
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='prepdwi',
+            suffix='.nii.gz',
             **inputs['bold'].wildcards
         )
     params:
