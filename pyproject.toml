@@ -1,0 +1,18 @@
+[tool.poetry]
+name="lhsc7t_processing"
+description = "7t lhsc processing"
+readme = "README.md"
+authors = ["Arun Thurairajah & Mackenzie Snyder"]
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<4.0"
+snakemake = [
+    { version=">=7.20,<8", python = "<3.11" },
+    { version=">=8.1.2", python = ">=3.11" },
+]
+snakebids = ">=0.13.1"
+pulp = "<2.8"
+
+[tool.poetry.scripts]
+lhsc7t_processing = "lhsc7t_processing.run:main"
