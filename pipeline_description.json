@@ -1,10 +1,10 @@
 {
-    "Name": "7t_lhsc_processing - My template snakebids app.",
+    "Name": "lhsc7t_processing - My template snakebids app.",
     "BIDSVersion": "1.4.0",
     "DatasetType": "derivative",
     "PipelineDescription":
         {
-            "Name": "7t_lhsc_processing",
+            "Name": "lhsc7t_processing",
             "Version": "0.1.0",
             "CodeURL": "http://github.com/arunthurai/7t_lhsc_processing",
             "Author": "Arun Thurairajah",
@@ -12,7 +12,7 @@
         },
     "GeneratedBy": [
         {
-            "Name": "7t_lhsc_processing",
+            "Name": "lhsc7t_processing",
             "Version": "0.1.0",
             "CodeURL": "http://github.com/arunthurai/7t_lhsc_processing",
             "Author": "Arun Thurairajah",

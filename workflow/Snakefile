@@ -1,5 +1,14 @@
 #---- begin snakebids boilerplate ----------------------------------------------
 
+# THE BELOW WORKFLOW IS IN THE DEVELOPMENT STAGE
+# IT IS STILL ROUGH WORK
+# THE BELOW WORKFLOW NEEDS TO BE TESTED
+
+# TO DO:
+# verify file paths
+# verify shell scripts
+# verify correct bids formatting output
+
 import snakebids
 from snakebids import bids
 import pandas as pd
@@ -18,16 +27,14 @@ inputs = snakebids.generate_inputs(
     use_bids_inputs=True,
 )
 
-
 #this adds constraints to the bids naming
-wildcard_constraints:  **snakebids.get_wildcard_constraints(config['pybids_inputs'])
+wildcard_constraints: **snakebids.get_wildcard_constraints(config['pybids_inputs'])
 
 wildcard_constraints:
     scanner='3T|7T',
     subject='sub-[0-9a-zA-Z]+'
 
 #---- end snakebids boilerplate ------------------------------------------------
-
 
 def get_subjects_bids(wildcards):
     participants_tsv = checkpoints.create_participants_tsv.get(**wildcards).output[0]
@@ -42,32 +49,106 @@ def get_server_id(wildcards):
     server_id = pd.read_table(participants_tsv).server_id
     return server_id
 
+# I was unsure where smooth came from - uncomment if part of the workflow
+# for now I replaced this with the output of prepdwi
+
+# rule all:
+#     input:
+#         expand(
+#             expand(
+#                 rules.smooth.output,
+#                 fwhm = config['smoothing_fwhm'],
+#                 allow_missing=True,
+#             ),
+#             zip,
+#             **inputs.zip_lists['bold']
+#         )
+#     default_target: True
 
 rule all:
-    input:
+    input: 
         expand(
-            expand(
-                rules.smooth.output,
-                fwhm = config['smoothing_fwhm'],
-                allow_missing=True,
-            ),
-            zip,
-            **inputs.zip_lists['bold']
+           bids(
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='prepdwi',
+            suffix='.nii.gz',
+            **inputs['bold'].wildcards
+            ) 
         )
     default_target: True
 
-
-rule cfmm2tars:
-    input: cfmm_id = get_server_id
-
-    output: tar_dir = config['sourcedata_dir']
-        
+# cfmm2tar
+# to verify and test - tar_dir
+rule cfmm2tar:
+    input: 
+        cfmm_id=lambda wildcards: get_server_id(wildcards)
+    output: 
+        tar_dir=expand("{tar_dir}/{wildcards.subject}", tar_dir=config['sourcedata_dir']) 
     container: config['singularity']['cfmm2tar']
-
     shell: 'apptainer run docker://khanlab/cfmm2tar:v1.0.0 -n {input.cfmm_id} {output.tar_dir}'
 
+# tar2bids
 rule tar2bids:
     input: 
-    
-    
-    shell: 'apptainer run docker://khanlab/tar2bids:
+        tar_dir=expand("{tar_dir}/{wildcards.subject}", tar_dir=config['sourcedata_dir']) 
+    output: 
+        bids(
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='bids',
+            suffix='.nii.gz',
+            **inputs['bold'].wildcards
+        )
+    container: config['singularity']['tar2bids']
+    script: "cfmm_base.py"
+    shell: 'apptainer run docker://khanlab/tar2bids:latest -h {script} -o {output} {input}
+
+# run gradcorrect
+rule run_gradcorrect:
+    input:
+        bids(
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='bids',
+            suffix='.nii.gz',
+            **inputs['bold'].wildcards
+        )
+    output:
+        bids(
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='gradcorrect',
+            suffix='.nii.gz',
+            **inputs['bold'].wildcards
+        )
+    container: config['singularity']['gradcorrect']
+    params:
+        grad_coeffs = config['parse_args']['grad_coeffs'],
+        participant = config['parse_args']['participant_label']
+
+    # verify the script down below is correct
+    shell: 'apptainer run docker://khanlab/gradcorrect:latest {input} {output} participant --{params.grad_coeffs} --participant_label P${params.participant}'
+
+# prepdwi
+rule prepdwi:
+    input:
+        bids(
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='gradcorrect',
+            suffix='.nii.gz',
+            **inputs['bold'].wildcards
+        )
+    output:
+        bids(
+            root=str(Path(config["output_dir"])),
+            datatype="anat",
+            desc='prepdwi',
+            suffix='.nii.gz',
+            **inputs['bold'].wildcards
+        )
+    params:
+        grad_coeffs = config['parse_args']['grad_coeffs'],
+        participant = config['parse_args']['participant_label']
+    shell: 'apptainer run docker://khanlab/prepdwi:latest snakedwi {input} {output} participant --participant_label P${params.participant} --gradcorrect_coeffs {params.grad_coeffs} --cores all'
