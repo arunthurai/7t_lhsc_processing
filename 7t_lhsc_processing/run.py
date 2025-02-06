@@ -11,10 +11,8 @@ def get_parser():
 
 
 def main():
-
-    app = SnakeBidsApp(Path(__file__).resolve().parent.parent)  # Get repo root
+    app = SnakeBidsApp(Path(__file__).resolve().parent.parent)  # to get repository root
     app.run_snakemake()
-
 
 
 if __name__ == "__main__":

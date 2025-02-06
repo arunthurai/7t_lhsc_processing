@@ -32,7 +32,7 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts": [
-            "lhsc7t_processing=lhsc7t_processing.run:main"
+            "7t_lhsc_processing=7t_lhsc_processing.run:main"
         ]
     },
     install_requires=["snakebids>=0.0.0", "snakemake"],
