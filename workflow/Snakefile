@@ -1,154 +1,95 @@
-#---- begin snakebids boilerplate ----------------------------------------------
+from pathlib import Path
+from snakebids.paths import bids
 
-# THE BELOW WORKFLOW IS IN THE DEVELOPMENT STAGE
-# IT IS STILL ROUGH WORK
-# THE BELOW WORKFLOW NEEDS TO BE TESTED
+# Load the config
+configfile: "./config/config.yml"
 
-# TO DO:
-# verify file paths
-# verify shell scripts
-# verify correct bids formatting output
+# set output_dir and cfmm_id
+output_dir = config["output_dir"]
+cfmm_id = config['parse_args']['cfmm_id']
 
-import snakebids
-from snakebids import bids
-import pandas as pd
+# to do -- use wildcards instead of hard coding these
+subject = "P214"
+session = "SNSX_20241220"
 
-configfile: workflow.source_path('../config/snakebids.yml')
-
-# Get input wildcards
-inputs = snakebids.generate_inputs(
-    bids_dir=config["bids_dir"],
-    pybids_inputs=config["pybids_inputs"],
-    pybids_database_dir=config.get("pybids_db_dir"),
-    pybids_reset_database=config.get("pybids_db_reset"),
-    derivatives=config.get("derivatives", None),
-    participant_label=config.get("participant_label", None),
-    exclude_participant_label=config.get("exclude_participant_label", None),
-    use_bids_inputs=True,
-)
-
-#this adds constraints to the bids naming
-wildcard_constraints: **snakebids.get_wildcard_constraints(config['pybids_inputs'])
-
-wildcard_constraints:
-    scanner='3T|7T',
-    subject='sub-[0-9a-zA-Z]+'
-
-#---- end snakebids boilerplate ------------------------------------------------
-
-def get_subjects_bids(wildcards):
-    participants_tsv = checkpoints.create_participants_tsv.get(**wildcards).output[0]
-    subjects = pd.read_table(participants_tsv).participant_id
-    
-    return expand('{subgroup}_{scanner}/bids/{subject}',
-                subject=subjects,
-                scanner=wildcards.scanner)
-
-def get_server_id(wildcards):
-    participants_tsv =  checkpoints.create_participants_tsv.get(**wildcards).output[0]
-    server_id = pd.read_table(participants_tsv).server_id
-    return server_id
-
-# I was unsure where smooth came from - uncomment if part of the workflow
-# for now I replaced this with the output of prepdwi
-
-# rule all:
-#     input:
-#         expand(
-#             expand(
-#                 rules.smooth.output,
-#                 fwhm = config['smoothing_fwhm'],
-#                 allow_missing=True,
-#             ),
-#             zip,
-#             **inputs.zip_lists['bold']
-#         )
-#     default_target: True
-
+# rule all
 rule all:
-    input: 
-        expand(
-           bids(
-            root=str(Path(config["output_dir"])),
+    input:
+        bids(
+            root=output_dir,
             datatype="anat",
             desc='prepdwi',
             suffix='.nii.gz',
-            **inputs['bold'].wildcards
-            ) 
+            subject=subject,
+            session=session,
         )
-    default_target: True
 
-# cfmm2tar
-# to verify and test - tar_dir
+# run cfmm2tar
 rule cfmm2tar:
-    input: 
-        cfmm_id=lambda wildcards: get_server_id(wildcards)
-    output: 
-        tar_dir=expand("{tar_dir}/{wildcards.subject}", tar_dir=config['sourcedata_dir']) 
-    container: config['singularity']['cfmm2tar']
-    shell: 'apptainer run docker://khanlab/cfmm2tar:v1.0.0 -n {input.cfmm_id} {output.tar_dir}'
+    output: tar_dir=f"{output_dir}/sourcedata/SNSX_P{cfmm_id}.tar"
+    shell: "singularity run docker://khanlab/cfmm2tar:v1.0.0 -n SNSX_P{cfmm_id}"
 
-# tar2bids
+# run tar2bids
 rule tar2bids:
-    input: 
-        tar_dir=expand("{tar_dir}/{wildcards.subject}", tar_dir=config['sourcedata_dir']) 
-    output: 
-        bids(
-            root=str(Path(config["output_dir"])),
+    input:
+        tar_file=f"{output_dir}/sourcedata/SNSX_P{cfmm_id}.tar"
+    output:
+        directory(bids(
+            root=output_dir,
             datatype="anat",
             desc='bids',
             suffix='.nii.gz',
-            **inputs['bold'].wildcards
-        )
-    container: config['singularity']['tar2bids']
-    script: "cfmm_base.py"
-    shell: 'apptainer run docker://khanlab/tar2bids:latest -h {script} -o {output} {input}
+            subject=subject,
+            session=session,
+        ))
+    shell: "singularity run docker://khanlab/tar2bids:latest -h cfmm_base.py -o {output} {input.tar_file}"
 
 # run gradcorrect
 rule run_gradcorrect:
     input:
         bids(
-            root=str(Path(config["output_dir"])),
+            root=output_dir,
             datatype="anat",
             desc='bids',
             suffix='.nii.gz',
-            **inputs['bold'].wildcards
+            subject=subject,
+            session=session,
         )
     output:
         bids(
-            root=str(Path(config["output_dir"])),
+            root=output_dir,
             datatype="anat",
             desc='gradcorrect',
             suffix='.nii.gz',
-            **inputs['bold'].wildcards
+            subject=subject,
+            session=session,
         )
-    container: config['singularity']['gradcorrect']
     params:
-        grad_coeffs = config['parse_args']['grad_coeffs'],
-        participant = config['parse_args']['participant_label']
+        grad_coeffs=config['parse_args']['grad_coeffs']
+    shell: 'singularity run docker://khanlab/gradcorrect:latest {input} {output} participant --grad_coeff_file {params.grad_coeffs}'
 
-    # verify the script down below is correct
-    shell: 'apptainer run docker://khanlab/gradcorrect:latest {input} {output} participant --{params.grad_coeffs} --participant_label P${params.participant}'
-
-# prepdwi
+# run prepdwi
 rule prepdwi:
     input:
         bids(
-            root=str(Path(config["output_dir"])),
+            root=output_dir,
             datatype="anat",
             desc='gradcorrect',
             suffix='.nii.gz',
-            **inputs['bold'].wildcards
+            subject=subject,
+            session=session,
         )
     output:
         bids(
-            root=str(Path(config["output_dir"])),
+            root=output_dir,
             datatype="anat",
             desc='prepdwi',
             suffix='.nii.gz',
-            **inputs['bold'].wildcards
+            subject=subject,
+            session=session,
         )
     params:
-        grad_coeffs = config['parse_args']['grad_coeffs'],
-        participant = config['parse_args']['participant_label']
-    shell: 'apptainer run docker://khanlab/prepdwi:latest snakedwi {input} {output} participant --participant_label P${params.participant} --gradcorrect_coeffs {params.grad_coeffs} --cores all'
+        grad_coeffs=config['parse_args']['grad_coeffs'],
+    shell: 'singularity run docker://khanlab/prepdwi:latest snakedwi {input} {output} participant --gradcorrect_coeffs {params.grad_coeffs} --cores all'
+
+

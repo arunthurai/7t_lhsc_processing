@@ -1,0 +1,23 @@
+output_dir: '/path/to/output_dir'
+
+parse_args:
+    output_dir: 
+        help: The directory where the output files
+            should be stored. If you are running group level analysis
+            this folder should be prepopulated with the results of the
+            participant level analysis.
+    
+    cfmm_id:
+        help: cfmm id of patient you want to complete the workflow for
+    
+    grad_coeffs:
+        help: 'Path to file containing scanner specific gradient correction 
+            coefficients. Use this to enable gradient non-linearity correction. 
+            (default: %(default)s)'
+        default: '/srv/software/gradcorrect/coeff_AC84.grad'
+
+# singularity:
+#     fsl: 'docker://brainlife/fsl/6.0.0'
+#     cfmm2tar: 'docker://khanlab/cfmm2tar:v1.1.1'
+#     tar2bids: 'docker://khanlab/tar2bids:latest'
+#     gradcorrect: 'docker://khanlab/gradcorrect:latest'
