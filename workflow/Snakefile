@@ -27,7 +27,8 @@ rule all:
 # run cfmm2tar
 rule cfmm2tar:
     output: tar_dir=f"{output_dir}/sourcedata/SNSX_P{cfmm_id}.tar"
-    shell: "singularity run docker://khanlab/cfmm2tar:v1.0.0 -n SNSX_P{cfmm_id}"
+    container: config['singularity']['cfmm2tar']
+    shell: "-n SNSX_P{cfmm_id}"
 
 # run tar2bids
 rule tar2bids:
@@ -42,7 +43,8 @@ rule tar2bids:
             subject=subject,
             session=session,
         ))
-    shell: "singularity run docker://khanlab/tar2bids:latest -h cfmm_base.py -o {output} {input.tar_file}"
+    container: config['singularity']['tar2bids']
+    shell: "-h cfmm_base.py -o {output} {input.tar_file}"
 
 # run gradcorrect
 rule run_gradcorrect:
@@ -66,7 +68,8 @@ rule run_gradcorrect:
         )
     params:
         grad_coeffs=config['parse_args']['grad_coeffs']
-    shell: 'singularity run docker://khanlab/gradcorrect:latest {input} {output} participant --grad_coeff_file {params.grad_coeffs}'
+    container: config['singularity']['gradcorrect']
+    shell: '{input} {output} participant --grad_coeff_file {params.grad_coeffs}'
 
 # run prepdwi
 rule prepdwi:
@@ -90,6 +93,7 @@ rule prepdwi:
         )
     params:
         grad_coeffs=config['parse_args']['grad_coeffs'],
-    shell: 'singularity run docker://khanlab/prepdwi:latest snakedwi {input} {output} participant --gradcorrect_coeffs {params.grad_coeffs} --cores all'
+    container: config['singularity']['prepdwi']
+    shell: 'snakedwi {input} {output} participant --gradcorrect_coeffs {params.grad_coeffs} --cores all'
 
 

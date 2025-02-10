@@ -16,8 +16,8 @@ parse_args:
             (default: %(default)s)'
         default: '/srv/software/gradcorrect/coeff_AC84.grad'
 
-# singularity:
-#     fsl: 'docker://brainlife/fsl/6.0.0'
-#     cfmm2tar: 'docker://khanlab/cfmm2tar:v1.1.1'
-#     tar2bids: 'docker://khanlab/tar2bids:latest'
-#     gradcorrect: 'docker://khanlab/gradcorrect:latest'
+singularity:
+    cfmm2tar: 'docker://khanlab/cfmm2tar:v1.1.1'
+    tar2bids: 'docker://khanlab/tar2bids:latest'
+    gradcorrect: 'docker://khanlab/gradcorrect:latest'
+    prepdwi: 'docker://khanlab/prepdwi:latest'
