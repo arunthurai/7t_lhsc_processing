@@ -2,7 +2,7 @@ from pathlib import Path
 from snakebids.paths import bids
 
 # Load the config
-configfile: "./config/config.yml"
+configfile: "./config/config.yaml"
 
 # set output_dir and cfmm_id
 output_dir = config["output_dir"]

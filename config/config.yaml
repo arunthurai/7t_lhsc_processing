@@ -1,6 +1,6 @@
-output_dir: '/path/to/output_dir'
-
 parse_args:
+    
+    # mandatory arguments
     output_dir: 
         help: The directory where the output files
             should be stored. If you are running group level analysis
@@ -10,11 +10,19 @@ parse_args:
     cfmm_id:
         help: cfmm id of patient you want to complete the workflow for
     
+    
+    # optional arguments
     grad_coeffs:
         help: 'Path to file containing scanner specific gradient correction 
             coefficients. Use this to enable gradient non-linearity correction. 
             (default: %(default)s)'
         default: '/srv/software/gradcorrect/coeff_AC84.grad'
+    
+    np:
+        help: 'Run Snakemake with dry-run (-np) mode.'
+
+    use-singularity:
+        help: 'Use Singularity containers for Snakemake.'
 
 singularity:
     cfmm2tar: 'docker://khanlab/cfmm2tar:v1.1.1'

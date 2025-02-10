@@ -1,5 +1,5 @@
 [tool.poetry]
-name="clinical_processing_7T"
+name="clinical_processing_7t"
 description = "7t lhsc processing"
 readme = "README.md"
 authors = ["Arun Thurairajah & Mackenzie Snyder"]
@@ -15,4 +15,4 @@ snakebids = ">=0.13.1"
 pulp = "<2.8"
 
 [tool.poetry.scripts]
-clincial_processing_7T = "clinical_processing_7Trun:main"
+clinical_processing_7t = "clinical_processing_7t.run:main"

@@ -44,14 +44,17 @@ poetry shell
 To execute a dry-run of the workflow, use:
 
 ```
-snakemake -np
+clinical_processing_7t output_dir cfmm_id -np
+```
+
+To execute a wet-run of the workflow, use:
+
+```
+clinical_processing_7t output_dir cfmm_id --use-singularity
 ```
 
 ## Current changes in progress
 - editing the wildcards to pull from file names instead of hard coding for testing
-- utilizing the built in container feature for snakebids with singularity
-- editing the run.py file
-- adding mandatory inputs for the terminal shell
 - testing the entire workflow as at wet run instead of dry runs 
 
 
