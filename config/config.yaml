@@ -28,4 +28,4 @@ singularity:
     cfmm2tar: 'docker://khanlab/cfmm2tar:v1.1.1'
     tar2bids: 'docker://khanlab/tar2bids:latest'
     gradcorrect: 'docker://khanlab/gradcorrect:latest'
-    prepdwi: 'docker://khanlab/prepdwi:latest'
+    snakedwi: 'docker://mackenzieasnyder/snakedwi:latest'

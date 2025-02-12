@@ -93,7 +93,7 @@ rule prepdwi:
         )
     params:
         grad_coeffs=config['parse_args']['grad_coeffs'],
-    container: config['singularity']['prepdwi']
-    shell: 'snakedwi {input} {output} participant --gradcorrect_coeffs {params.grad_coeffs} --cores all'
+    container: config['singularity']['snakedwi']
+    shell: 'snakedwi {input} {output} participant --gradcorrect_coeffs {params.grad_coeffs} --use-eddy-gpu --use-singularity --cores all'
 
 
